@@ -770,12 +770,12 @@ public class MainActivity extends Activity {
     private void updateServiceUI() {
         if (serviceRunning) {
             btnToggleService.setText("⏹️ STOP Auto Clicker");
-            btnToggleService.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF44336));
+            btnToggleService.setBackgroundColor(0xFFF44336);
             tvServiceStatus.setText("Status: Running 🟢");
             tvServiceStatus.setTextColor(0xFF4CAF50);
         } else {
             btnToggleService.setText("▶️ START Auto Clicker");
-            btnToggleService.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+            btnToggleService.setBackgroundColor(0xFF4CAF50);
             tvServiceStatus.setText("Status: Stopped 🔴");
             tvServiceStatus.setTextColor(0xFFF44336);
         }
