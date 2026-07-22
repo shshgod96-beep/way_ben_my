@@ -39,7 +39,8 @@ public class FloatingCoordService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel("tj_float", "TimeJump Float", NotificationManager.IMPORTANCE_LOW);
-            getSystemService(NotificationManager.class).createNotificationChannel(channel);
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.createNotificationChannel(channel);
             Notification notification = new Notification.Builder(this, "tj_float")
                     .setContentTitle("Coordinate Picker Active")
                     .setSmallIcon(android.R.drawable.ic_menu_compass)
