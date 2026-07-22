@@ -59,7 +59,7 @@
         <!-- Minimum Xposed Version required -->
         <meta-data
             android:name="xposedminversion"
-            android:value="93" />
+            android:value="53" />
             
         <!-- Define module scope (Games to target by default in LSPosed) -->
         <meta-data
