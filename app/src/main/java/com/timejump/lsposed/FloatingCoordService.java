@@ -45,6 +45,12 @@ public class FloatingCoordService extends Service {
                     .setSmallIcon(android.R.drawable.ic_menu_compass)
                     .build();
             startForeground(7778, notification);
+        } else {
+            Notification notification = new Notification.Builder(this)
+                    .setContentTitle("Coordinate Picker Active")
+                    .setSmallIcon(android.R.drawable.ic_menu_compass)
+                    .build();
+            startForeground(7778, notification);
         }
         return START_NOT_STICKY;
     }
