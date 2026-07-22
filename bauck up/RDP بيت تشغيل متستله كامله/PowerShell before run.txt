@@ -1,0 +1,2 @@
+#هنا هحمل نسخت المحاكي بتاعتي الي انا جهزت فيها البرنامج بتاعي
+Invoke-WebRequest -Uri "حط_الرابط_المباشرلي مجلد المحاكي المضغوط_هنا" -OutFile "$env:USERPROFILE\Desktop\file.zip"; Expand-Archive -Path "$env:USERPROFILE\Desktop\file.zip" -DestinationPath "$env:USERPROFILE\Desktop\Extracted_Files"
