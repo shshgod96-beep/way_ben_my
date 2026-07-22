@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- By default, LSPosed will prompt to apply to this package -->
+    <string-array name="xposed_scope">
+        <item>com.dts.freefireth</item>
+    </string-array>
+</resources>
