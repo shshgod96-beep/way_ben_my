@@ -1,0 +1,7 @@
+﻿bauck up/
+build/
+.gradle/
+.idea/
+local.properties
+gradle/
+build_log.txt
