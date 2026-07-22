@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.TimeJump" parent="android:Theme.DeviceDefault.Light.DarkActionBar">
+    <style name="Theme.TimeJump" parent="android:Theme.Holo.Light.DarkActionBar">
         <!-- Customize your theme here. -->
     </style>
 </resources>
