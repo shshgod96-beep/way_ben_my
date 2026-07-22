@@ -82,7 +82,7 @@ public class AutoClickerService extends Service {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID, "Auto Clicker", NotificationManager.IMPORTANCE_LOW);
             channel.setDescription("TimeJump AI Auto Clicker scanning for targets.");
-            NotificationManager nm = getSystemService(NotificationManager.class);
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm != null) nm.createNotificationChannel(channel);
         }
     }
