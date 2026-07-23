@@ -51,12 +51,119 @@ public class AutoClickerService extends Service {
         if (!running) {
             running = true;
             isRunning = true;
+
+            // Step 1: Inject into game process (run once)
+            new Thread(this::performInjection, "TJ-Injector").start();
+
+            // Step 2: Start auto-click loop
             workerThread = new Thread(this::autoClickLoop, "TJ-AutoClicker");
             workerThread.start();
             Log.i(TAG, "=== AutoClicker Service STARTED ===");
         }
 
         return START_STICKY;
+    }
+
+    // ==================== ROOT INJECTION ====================
+
+    private void performInjection() {
+        try {
+            Log.i(TAG, "=== Starting Root Injection Process ===");
+
+            // Find game PID
+            String gamePid = findGamePid();
+            if (gamePid == null || gamePid.isEmpty()) {
+                Log.w(TAG, "Game process not found. Injection skipped (will retry when game launches).");
+                return;
+            }
+            Log.i(TAG, "Found game PID: " + gamePid);
+
+            // Copy injector binary and library to /data/local/tmp/
+            String nativeLibDir = getApplicationInfo().nativeLibraryDir;
+            String[] setupCmds = {
+                "cp " + nativeLibDir + "/libtj_injector.so /data/local/tmp/tj_injector",
+                "chmod 755 /data/local/tmp/tj_injector",
+                "cp " + nativeLibDir + "/libTimeJump.so /data/local/tmp/libTimeJump.so",
+                "chmod 755 /data/local/tmp/libTimeJump.so",
+                "echo 0 > /data/local/tmp/tj_offset",
+                "chmod 666 /data/local/tmp/tj_offset"
+            };
+            runAsRoot(setupCmds);
+            Log.i(TAG, "Injector and library copied to /data/local/tmp/");
+
+            // Perform ptrace injection
+            String[] injectCmd = {
+                "/data/local/tmp/tj_injector " + gamePid + " /data/local/tmp/libTimeJump.so"
+            };
+            runAsRoot(injectCmd);
+            Log.i(TAG, "=== Injection command sent! ===");
+
+            // Run Lua script if available
+            runLuaScript();
+
+        } catch (Exception e) {
+            Log.e(TAG, "Injection failed", e);
+        }
+    }
+
+    private String findGamePid() {
+        try {
+            // Try pidof first
+            Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", "pidof com.dts.freefireth"});
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(p.getInputStream()));
+            String pid = reader.readLine();
+            p.waitFor();
+            if (pid != null && !pid.trim().isEmpty()) {
+                return pid.trim().split("\\s+")[0]; // First PID if multiple
+            }
+
+            // Fallback: parse ps output
+            p = Runtime.getRuntime().exec(new String[]{"su", "-c", "ps | grep com.dts.freefireth"});
+            reader = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()));
+            String line = reader.readLine();
+            p.waitFor();
+            if (line != null) {
+                String[] parts = line.trim().split("\\s+");
+                if (parts.length >= 2) return parts[1];
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to find game PID", e);
+        }
+        return null;
+    }
+
+    private void runLuaScript() {
+        try {
+            SharedPreferences prefs = getSharedPreferences("com.timejump.lsposed_preferences", Context.MODE_PRIVATE);
+            String script = prefs.getString("lua_script", "");
+            if (script != null && !script.isEmpty()) {
+                Log.i(TAG, "Running Lua script via LuaEngine...");
+                new Thread(() -> {
+                    String result = LuaEngine.runScript(script);
+                    Log.i(TAG, "Lua script result: " + result);
+                }, "TJ-Lua").start();
+            } else {
+                Log.i(TAG, "No Lua script configured, skipping.");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to run Lua script", e);
+        }
+    }
+
+    private void runAsRoot(String[] cmds) {
+        try {
+            Process p = Runtime.getRuntime().exec("su");
+            java.io.DataOutputStream os = new java.io.DataOutputStream(p.getOutputStream());
+            for (String cmd : cmds) {
+                os.writeBytes(cmd + "\n");
+            }
+            os.writeBytes("exit\n");
+            os.flush();
+            p.waitFor();
+        } catch (Exception e) {
+            Log.e(TAG, "runAsRoot failed", e);
+        }
     }
 
     @Override

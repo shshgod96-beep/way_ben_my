@@ -1,6 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 # ==================== Lua 5.4.6 Library ====================
+# Still needed for the Java-side Lua engine (libLuaBridge.so)
 include $(CLEAR_VARS)
 LOCAL_MODULE := lua
 LOCAL_SRC_FILES := \
@@ -25,11 +26,33 @@ LOCAL_CFLAGS := -O3 -fvisibility=hidden -Werror -Wno-unused-parameter
 LOCAL_LDLIBS := -llog
 include $(BUILD_STATIC_LIBRARY)
 
-# ==================== TimeJump Main Library ====================
+# ==================== TimeJump Injected Library ====================
+# This is the .so that gets injected into the game process via ptrace.
+# It has NO Lua, NO JNI. Just xhook time hooks + file-based IPC.
 include $(CLEAR_VARS)
 LOCAL_MODULE := TimeJump
 LOCAL_SRC_FILES := timejump.cpp
-LOCAL_C_INCLUDES := $(LOCAL_PATH) $(LOCAL_PATH)/lua
+LOCAL_C_INCLUDES := $(LOCAL_PATH)
 LOCAL_LDLIBS := -llog -ldl
-LOCAL_STATIC_LIBRARIES := xhook lua
+LOCAL_STATIC_LIBRARIES := xhook
+include $(BUILD_SHARED_LIBRARY)
+
+# ==================== ptrace Injector Executable ====================
+# Root binary that injects libTimeJump.so into the game process.
+include $(CLEAR_VARS)
+LOCAL_MODULE := tj_injector
+LOCAL_SRC_FILES := injector.c
+LOCAL_LDLIBS := -llog -ldl
+include $(BUILD_EXECUTABLE)
+
+# ==================== Lua Bridge Library ====================
+# JNI library that runs Lua scripts inside OUR app process.
+# Lua scripts call timeJump() which writes to /data/local/tmp/tj_offset,
+# and clickButton()/clickImage() which call back to Java for root-based input.
+include $(CLEAR_VARS)
+LOCAL_MODULE := LuaBridge
+LOCAL_SRC_FILES := lua_bridge.cpp
+LOCAL_C_INCLUDES := $(LOCAL_PATH) $(LOCAL_PATH)/lua
+LOCAL_LDLIBS := -llog
+LOCAL_STATIC_LIBRARIES := lua
 include $(BUILD_SHARED_LIBRARY)

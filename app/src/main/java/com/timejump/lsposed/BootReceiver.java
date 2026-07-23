@@ -4,55 +4,52 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.util.Log;
-
-import java.io.DataOutputStream;
 
 public class BootReceiver extends BroadcastReceiver {
     private static final String TAG = "TimeJumpInjector";
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
-            Log.i(TAG, "Boot Completed! Checking for Auto-Boot App...");
+        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction()) || 
+            "android.intent.action.QUICKBOOT_POWERON".equals(intent.getAction())) {
             
-            SharedPreferences prefs = context.getSharedPreferences("TimeJumpPrefs", Context.MODE_PRIVATE);
-            
-            // Check if auto-boot is enabled
-            boolean autoBootEnabled = prefs.getBoolean("auto_start_boot", true);
-            if (!autoBootEnabled) {
-                Log.i(TAG, "Auto-Boot is disabled by user. Skipping.");
-                return;
-            }
-            
-            String targetApp = prefs.getString("boot_app_package", "");
+            Log.i(TAG, "Boot Completed received!");
+            SharedPreferences globalPrefs = context.getSharedPreferences("TimeJumpPrefs", Context.MODE_PRIVATE);
 
-            if (!targetApp.isEmpty()) {
-                Log.i(TAG, "Auto-Boot target found: " + targetApp);
-                
-                // Run in a background thread so we don't block the receiver
-                new Thread(() -> {
-                    try {
-                        // Wait 10 seconds to allow the system to fully stabilize after boot
-                        Thread.sleep(10000);
-                        
-                        Log.i(TAG, "Launching " + targetApp + " via ROOT...");
-                        Process p = Runtime.getRuntime().exec("su");
-                        DataOutputStream os = new DataOutputStream(p.getOutputStream());
-                        // Use monkey to launch the main launcher activity of the package
-                        os.writeBytes("monkey -p " + targetApp + " -c android.intent.category.LAUNCHER 1\n");
-                        os.writeBytes("exit\n");
-                        os.flush();
-                        p.waitFor();
-                        
-                        Log.i(TAG, "Launch command executed.");
-                    } catch (Exception e) {
-                        Log.e(TAG, "Failed to launch app on boot", e);
+            // 1. Start AutoClickerService if enabled
+            if (globalPrefs.getBoolean("auto_start_boot", true)) {
+                try {
+                    Intent serviceIntent = new Intent(context, AutoClickerService.class);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(serviceIntent);
+                    } else {
+                        context.startService(serviceIntent);
                     }
-                }).start();
-            } else {
-                Log.i(TAG, "No Auto-Boot app configured.");
+                    Log.i(TAG, "AutoClickerService started on boot.");
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to start AutoClickerService on boot", e);
+                }
+            }
+
+            // 2. Launch specified app if set
+            String bootApp = globalPrefs.getString("boot_app_package", "");
+            if (!bootApp.isEmpty()) {
+                try {
+                    Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(bootApp);
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(launchIntent);
+                        Log.i(TAG, "Launched app on boot: " + bootApp);
+                    } else {
+                        Log.e(TAG, "Launch intent null for package: " + bootApp);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to launch app on boot", e);
+                }
             }
         }
     }
 }
+
