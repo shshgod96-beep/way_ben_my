@@ -42,10 +42,10 @@ public class MainActivity extends Activity {
     private static final int PICK_ZIP_REQUEST = 2;
     private static final String TARGETS_DIR = "/data/local/tmp/targets";
 
-    private View pageScript, pageMacro, pageBoot;
-    private TextView tabScript, tabMacro, tabBoot;
-    private TextView tvTargetList, tvServiceStatus, tvBootApp;
-    private Button btnToggleService;
+    private View pageScript, pageMacro, pageBoot, pageLog;
+    private TextView tabScript, tabMacro, tabBoot, tabLog;
+    private TextView tvTargetList, tvServiceStatus, tvBootApp, tvLogs;
+    private Button btnToggleService, btnRefreshLogs;
     private EditText etStepDelay, etClickDelay;
     private boolean serviceRunning = false;
     private SharedPreferences globalPrefs;
@@ -79,11 +79,13 @@ public class MainActivity extends Activity {
         tabScript = findViewById(R.id.tabScript);
         tabMacro = findViewById(R.id.tabMacro);
         tabBoot = findViewById(R.id.tabBoot);
+        tabLog = findViewById(R.id.tabLog);
 
         // Page views
         pageScript = findViewById(R.id.pageScript);
         pageMacro = findViewById(R.id.pageMacro);
         pageBoot = findViewById(R.id.pageBoot);
+        pageLog = findViewById(R.id.pageLog);
 
         // Script tab views
         EditText scriptInput = findViewById(R.id.scriptInput);
@@ -108,6 +110,10 @@ public class MainActivity extends Activity {
         // Boot tab views
         tvBootApp = findViewById(R.id.tvBootApp);
         Button btnSelectBootApp = findViewById(R.id.btnSelectBootApp);
+        
+        // Log tab views
+        tvLogs = findViewById(R.id.tvLogs);
+        btnRefreshLogs = findViewById(R.id.btnRefreshLogs);
 
         // Load saved script and checkboxes
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -135,6 +141,10 @@ public class MainActivity extends Activity {
         tabScript.setOnClickListener(v -> switchTab(0));
         tabMacro.setOnClickListener(v -> switchTab(1));
         tabBoot.setOnClickListener(v -> switchTab(2));
+        tabLog.setOnClickListener(v -> switchTab(3));
+        
+        // ===== LOG TAB =====
+        btnRefreshLogs.setOnClickListener(v -> fetchLogs());
         
         // ===== CHECKBOX LISTENERS =====
         cbAutoMacro.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -342,19 +352,58 @@ public class MainActivity extends Activity {
         pageScript.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
         pageMacro.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
         pageBoot.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+        pageLog.setVisibility(tab == 3 ? View.VISIBLE : View.GONE);
 
         tabScript.setTextColor(tab == 0 ? 0xFFFFFFFF : 0xFFAAAAAA);
         tabMacro.setTextColor(tab == 1 ? 0xFFFFFFFF : 0xFFAAAAAA);
         tabBoot.setTextColor(tab == 2 ? 0xFFFFFFFF : 0xFFAAAAAA);
+        tabLog.setTextColor(tab == 3 ? 0xFFFFFFFF : 0xFFAAAAAA);
 
         tabScript.setBackgroundColor(tab == 0 ? 0xFF3F51B5 : 0x00000000);
         tabMacro.setBackgroundColor(tab == 1 ? 0xFF3F51B5 : 0x00000000);
         tabBoot.setBackgroundColor(tab == 2 ? 0xFF3F51B5 : 0x00000000);
+        tabLog.setBackgroundColor(tab == 3 ? 0xFF3F51B5 : 0x00000000);
 
         if (tab == 1) {
             saveGlobalDelays();
             refreshTargetList();
         }
+        if (tab == 3) {
+            fetchLogs();
+        }
+    }
+    
+    // ==================== FETCH LOGS ====================
+    private void fetchLogs() {
+        tvLogs.setText("Fetching logs...");
+        new Thread(() -> {
+            try {
+                // -d dumps and exits. -s filters to our tags
+                Process p = Runtime.getRuntime().exec("logcat -d -s TimeJumpInjector TJ-Injector TJ-Lua");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                p.waitFor();
+                
+                String logs = sb.toString();
+                if (logs.isEmpty()) {
+                    logs = "No logs found yet. Start the service and try again.";
+                }
+                
+                // Get the last 2000 chars to avoid memory issues
+                if (logs.length() > 3000) {
+                    logs = "... " + logs.substring(logs.length() - 3000);
+                }
+                
+                final String finalLogs = logs;
+                runOnUiThread(() -> tvLogs.setText(finalLogs));
+            } catch (Exception e) {
+                runOnUiThread(() -> tvLogs.setText("Error reading logs: " + e.getMessage()));
+            }
+        }).start();
     }
 
     // ==================== SAVE GLOBAL DELAYS ====================

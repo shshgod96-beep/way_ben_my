@@ -48,6 +48,18 @@
             android:padding="12dp"
             android:layout_marginStart="2dp"
             android:textStyle="bold"/>
+            
+        <TextView
+            android:id="@+id/tabLog"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="📋 Logs"
+            android:textColor="#AAAAAA"
+            android:textAlignment="center"
+            android:padding="12dp"
+            android:layout_marginStart="2dp"
+            android:textStyle="bold"/>
     </LinearLayout>
 
     <!-- ======== TAB 1: SCRIPT ======== -->
@@ -385,6 +397,58 @@
                 android:backgroundTint="#607D8B"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ======== TAB 4: LOGS ======== -->
+    <ScrollView
+        android:id="@+id/pageLog"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+                
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="📋 App Logs (Logcat)"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="18sp"/>
+                    
+                <Button
+                    android:id="@+id/btnRefreshLogs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔄 Refresh"
+                    android:backgroundTint="#009688"
+                    android:textColor="#FFFFFF"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvLogs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="300dp"
+                android:text="Press refresh to load logs..."
+                android:textColor="#00FF00"
+                android:background="#1E1E1E"
+                android:padding="12dp"
+                android:fontFamily="monospace"
+                android:textSize="11sp"/>
+                
         </LinearLayout>
     </ScrollView>
 
