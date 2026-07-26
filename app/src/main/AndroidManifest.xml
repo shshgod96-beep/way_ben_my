@@ -46,7 +46,25 @@
             </intent-filter>
         </receiver>
         
-        
+        <!-- Declare as an Xposed Module -->
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+            
+        <!-- Module Description -->
+        <meta-data
+            android:name="xposeddescription"
+            android:value="Dynamically injects Lua scripts into Free Fire." />
+            
+        <!-- Minimum Xposed Version required -->
+        <meta-data
+            android:name="xposedminversion"
+            android:value="93" />
+            
+        <!-- Define module scope (Games to target by default in LSPosed) -->
+        <meta-data
+            android:name="xposedscope"
+            android:resource="@array/xposed_scope" />
             
     </application>
 </manifest>
